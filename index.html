@@ -14,7 +14,6 @@
       --text-dark: #2B231D;
       --text-gray: #6E6259;
       --border-color: #DBC8B0;
-      --border-dark: #8C4A32;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; }
@@ -50,22 +49,6 @@
       font-size: 13px;
       color: #8C4A00;
       font-weight: 600;
-    }
-
-    .gear-btn {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      color: white;
-      border-radius: 50%;
-      width: 34px;
-      height: 34px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     .container { max-width: 600px; margin: 0 auto; padding: 16px; }
@@ -111,12 +94,49 @@
       border-color: var(--vintage-blue);
     }
 
-    .card-bottom { display: flex; justify-content: flex-end; align-items: center; margin-top: 4px; }
+    /* 數量選擇與加入按鈕區域 */
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px dashed #EDE5D8;
+    }
+    .qty-control {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #D5C7B5;
+      border-radius: 6px;
+      background: #FFF;
+      overflow: hidden;
+    }
+    .qty-btn {
+      background: #FAF6ED;
+      border: none;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-dark);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qty-btn:active { background: #E6D8C3; }
+    .qty-display {
+      width: 34px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
     .btn-add {
       background-color: var(--vintage-red);
       color: white;
       border: none;
-      padding: 8px 18px;
+      padding: 8px 16px;
       border-radius: 8px;
       font-size: 14px;
       font-weight: 700;
@@ -194,7 +214,6 @@
       <span class="badge-pill">一碗豆花 • 滿滿古早味</span>
       <span class="badge-pill">一律外帶</span>
     </div>
-   
   </header>
 
   <div class="notice-bar">
@@ -250,20 +269,10 @@
     </div>
   </div>
 
-  <!-- API 設定視窗 -->
-  <div class="modal-overlay" id="configModal">
-    <div class="modal">
-      <div class="modal-title">系統連動設定</div>
-      <p style="font-size: 13px; color: #666; margin-bottom: 12px;">請貼入 Google Apps Script 部署後的「網頁應用程式網址」：</p>
-      <input type="text" id="apiEndpointInput" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
-      <div class="modal-actions">
-        <button class="btn-close" onclick="closeModal('configModal')">取消</button>
-        <button class="btn-submit" onclick="saveConfig()">儲存網址</button>
-      </div>
-    </div>
-  </div>
-
   <script>
+    // 已更新為您最新的 Google Apps Script 網頁應用程式網址
+    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbzNNX3OJT-Vj5RpCWVbAkIfpx40Yq5Al388P-BVuivqgeoVc8riFTm8uIF8ZLpIqls5Cw/exec';
+
     const MENU_ITEMS = [
       { id: 't1', name: '傳統手工豆花', price: 50, desc: '傳承古法製作，綿密豆香' },
       { id: 't2', name: '紅豆豆花', price: 55, desc: '慢火熬煮萬丹紅豆，甜而不膩' },
@@ -282,19 +291,33 @@
 
     let cart = [];
     let selectedAddonsState = {};
+    let itemQuantities = {};
+
+    function getQuantity(itemId) {
+      return itemQuantities[itemId] || 1;
+    }
+
+    function changeQty(itemId, delta) {
+      let current = getQuantity(itemId);
+      current = Math.max(1, current + delta);
+      itemQuantities[itemId] = current;
+      renderMenu();
+    }
 
     function renderMenu() {
       const container = document.getElementById('menuList');
       container.innerHTML = MENU_ITEMS.map(item => {
         const itemAddons = selectedAddonsState[item.id] || [];
         const addonsPrice = itemAddons.length * 5;
-        const currentItemTotal = item.price + addonsPrice;
+        const singlePrice = item.price + addonsPrice;
+        const qty = getQuantity(item.id);
+        const subTotal = singlePrice * qty;
 
         return `
           <div class="menu-card">
             <div class="card-top">
               <span class="item-name">${item.name}</span>
-              <span class="item-price">$${currentItemTotal}</span>
+              <span class="item-price">$${subTotal} <span style="font-size:12px;color:#888;font-weight:normal;">($${singlePrice}/碗)</span></span>
             </div>
             <div class="item-desc">${item.desc}</div>
             
@@ -314,7 +337,12 @@
             </div>
 
             <div class="card-bottom">
-              <button class="btn-add" onclick="addToCart('${item.id}')">加入外帶清單</button>
+              <div class="qty-control">
+                <button class="qty-btn" onclick="changeQty('${item.id}', -1)">－</button>
+                <span class="qty-display">${qty}</span>
+                <button class="qty-btn" onclick="changeQty('${item.id}', 1)">＋</button>
+              </div>
+              <button class="btn-add" onclick="addToCart('${item.id}')">加入清單 ($${subTotal})</button>
             </div>
           </div>
         `;
@@ -336,15 +364,18 @@
       const item = MENU_ITEMS.find(i => i.id === itemId);
       const chosenAddons = [...(selectedAddonsState[itemId] || [])];
       const singlePrice = item.price + (chosenAddons.length * 5);
+      const qty = getQuantity(itemId);
 
       cart.push({
         name: item.name,
-        basePrice: item.price,
+        quantity: qty,
         addons: chosenAddons,
-        finalPrice: singlePrice
+        singlePrice: singlePrice,
+        finalPrice: singlePrice * qty
       });
 
       selectedAddonsState[itemId] = [];
+      itemQuantities[itemId] = 1;
       renderMenu();
       updateCartBar();
     }
@@ -356,8 +387,9 @@
         return;
       }
       bar.style.display = 'flex';
-      document.getElementById('cartCount').textContent = cart.length;
+      const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
       const total = cart.reduce((sum, item) => sum + item.finalPrice, 0);
+      document.getElementById('cartCount').textContent = totalCount;
       document.getElementById('cartTotal').textContent = '$' + total;
     }
 
@@ -368,8 +400,8 @@
       listEl.innerHTML = cart.map((item, idx) => `
         <div class="modal-item-row">
           <div>
-            <strong>${idx + 1}. ${item.name}</strong>
-            ${item.addons.length > 0 ? `<div style="font-size: 12px; color: var(--vintage-blue);">${item.addons.join('、')}</div>` : ''}
+            <strong>${idx + 1}. ${item.name} × ${item.quantity} 碗</strong>
+            ${item.addons.length > 0 ? `<div style="font-size: 12px; color: var(--vintage-blue);">每碗加料：${item.addons.join('、')}</div>` : ''}
           </div>
           <div style="font-weight: bold; color: var(--vintage-red);">$${item.finalPrice}</div>
         </div>
@@ -400,10 +432,8 @@
       const total = cart.reduce((sum, item) => sum + item.finalPrice, 0);
 
       const itemsDetail = cart.map(item => {
-        if (item.addons.length > 0) {
-          return `${item.name}（${item.addons.join(', ')}）`;
-        }
-        return item.name;
+        const addonText = item.addons.length > 0 ? `（${item.addons.join(', ')}）` : '';
+        return `${item.name}${addonText} × ${item.quantity}碗`;
       }).join('、');
 
       const payload = {
@@ -416,19 +446,15 @@
         status: "待付款備餐"
       };
 
-      const endpoint = 'https://script.google.com/macros/s/AKfycbzNNX3OJT-Vj5RpCWVbAkIfpx40Yq5Al388P-BVuivqgeoVc8riFTm8uIF8ZLpIqls5Cw/exec';
-
-      if (endpoint) {
-        try {
-          await fetch(endpoint, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        } catch (e) {
-          console.error("發送失敗，使用本地紀錄", e);
-        }
+      try {
+        await fetch(ENDPOINT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.error("發送記錄", e);
       }
 
       closeModal('checkoutModal');
@@ -442,22 +468,11 @@
     function resetAll() {
       cart = [];
       selectedAddonsState = {};
+      itemQuantities = {};
       document.getElementById('orderNotes').value = '';
       closeModal('successModal');
       renderMenu();
       updateCartBar();
-    }
-
-    function openConfigModal() {
-      document.getElementById('apiEndpointInput').value = localStorage.getItem('douhua_gas_url') || '';
-      document.getElementById('configModal').style.display = 'flex';
-    }
-
-    function saveConfig() {
-      const val = document.getElementById('apiEndpointInput').value.trim();
-      localStorage.setItem('douhua_gas_url', val);
-      alert('API 網址儲存成功！');
-      closeModal('configModal');
     }
 
     renderMenu();
