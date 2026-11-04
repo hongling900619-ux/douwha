@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>黃爸爸的豆花店 - 線上點餐</title>
+  <style>
+    :root {
+      --bg-cream: #F7F3E8;
+      --card-bg: #FFFDF9;
+      --vintage-red: #B93826;
+      --vintage-blue: #1E3D59;
+      --vintage-gold: #E8A838;
+      --text-dark: #2B231D;
+      --text-gray: #6E6259;
+      --border-color: #DBC8B0;
+      --border-dark: #8C4A32;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; }
+    body { background-color: var(--bg-cream); color: var(--text-dark); padding-bottom: 90px; }
+
+    header {
+      background: linear-gradient(135deg, var(--vintage-red), #8C2518);
+      color: #fff;
+      padding: 24px 16px 16px;
+      text-align: center;
+      border-bottom: 4px solid var(--vintage-gold);
+      position: relative;
+    }
+    .header-sub { font-size: 13px; letter-spacing: 3px; color: #FFE8B8; margin-bottom: 4px; font-weight: 500; }
+    .header-title { font-size: 26px; font-weight: 800; letter-spacing: 2px; }
+    .header-badge-row { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
+    .badge-pill {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--vintage-gold);
+      color: #FFF;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .notice-bar {
+      background-color: #FFF2D6;
+      border-bottom: 1px solid #E6D2B5;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #8C4A00;
+      font-weight: 600;
+    }
+
+    .gear-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+
+    .menu-grid { display: flex; flex-direction: column; gap: 14px; }
+    .menu-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .card-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .item-name { font-size: 18px; font-weight: 700; color: var(--text-dark); }
+    .item-price { font-size: 18px; font-weight: 800; color: var(--vintage-red); }
+    .item-desc { font-size: 13px; color: var(--text-gray); }
+
+    .addon-section {
+      background-color: #FAF6ED;
+      border: 1px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .addon-title { font-size: 12px; font-weight: bold; color: var(--vintage-blue); margin-bottom: 6px; }
+    .addon-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .addon-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #FFF;
+      border: 1px solid #D5C7B5;
+      padding: 5px 10px;
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .addon-chip.selected {
+      background: var(--vintage-blue);
+      color: #fff;
+      border-color: var(--vintage-blue);
+    }
+
+    .card-bottom { display: flex; justify-content: flex-end; align-items: center; margin-top: 4px; }
+    .btn-add {
+      background-color: var(--vintage-red);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .cart-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 2px solid var(--vintage-gold);
+      padding: 12px 18px;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 600px;
+      margin: 0 auto;
+      z-index: 99;
+    }
+    .cart-info { font-size: 14px; }
+    .cart-total-price { font-size: 20px; font-weight: 800; color: var(--vintage-red); }
+    .btn-checkout {
+      background: var(--vintage-red);
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+    .modal {
+      background: #FFF;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-title { font-size: 18px; font-weight: 800; border-bottom: 2px solid var(--vintage-gold); padding-bottom: 8px; margin-bottom: 14px; }
+    .modal-item-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #eee; }
+    .form-group { margin-top: 12px; }
+    .form-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block; }
+    .form-input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-submit { flex: 1; background: var(--vintage-red); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .btn-close { background: #eee; color: #555; border: none; padding: 12px; border-radius: 8px; cursor: pointer; }
+
+    .success-box { text-align: center; padding: 20px 10px; }
+    .pickup-number { font-size: 42px; font-weight: 900; color: var(--vintage-red); margin: 15px 0; letter-spacing: 2px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-sub">古 早 味 道 • 手 工 豆 花</div>
+    <div class="header-title">黃爸爸的豆花店</div>
+    <div class="header-badge-row">
+      <span class="badge-pill">一碗豆花 • 滿滿古早味</span>
+      <span class="badge-pill">一律外帶</span>
+    </div>
+   
+  </header>
+
+  <div class="notice-bar">
+    <span>📢</span>
+    <span>現場點餐須知：手機送單後，請至櫃檯「報號碼＋付現金」，店員收現後立即備餐！</span>
+  </div>
+
+  <div class="container">
+    <div class="menu-grid" id="menuList"></div>
+  </div>
+
+  <div class="cart-bar" id="cartBar" style="display: none;">
+    <div class="cart-info">
+      已選 <span id="cartCount">0</span> 碗 ｜ 合計 <span class="cart-total-price" id="cartTotal">$0</span>
+    </div>
+    <button class="btn-checkout" onclick="openCheckoutModal()">確認外帶送單</button>
+  </div>
+
+  <!-- 結帳視窗 -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal">
+      <div class="modal-title">確認點餐內容</div>
+      <div id="checkoutItems"></div>
+      <div style="text-align: right; font-size: 16px; font-weight: bold; margin: 10px 0;">
+        總金額：<span style="color: var(--vintage-red);" id="modalTotal">$0</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">訂單備註（選填，如：糖水少、不需湯匙）</label>
+        <input type="text" id="orderNotes" class="form-input" placeholder="可在此填寫客製需求">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-close" onclick="closeModal('checkoutModal')">返回修改</button>
+        <button class="btn-submit" id="submitBtn" onclick="submitOrder()">送出訂單</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 完成與取餐號碼視窗 -->
+  <div class="modal-overlay" id="successModal">
+    <div class="modal">
+      <div class="success-box">
+        <div style="font-size: 40px;">🥣</div>
+        <h2 style="color: var(--text-dark); margin-top: 6px;">點餐已送出！</h2>
+        <p style="color: var(--text-gray); font-size: 13px; margin-top: 4px;">您的取餐號碼為</p>
+        <div class="pickup-number" id="displayPickupNum">#A01</div>
+        <p style="background: #FFF2D6; padding: 8px; border-radius: 6px; font-size: 13px; color: #8C4A00; line-height: 1.5;">
+          請至攤位櫃檯出示號碼並<strong>以現金結帳</strong>，<br>店員收到款項後將立即為您盛裝打包！
+        </p>
+        <button class="btn-submit" style="margin-top: 20px; width: 100%;" onclick="resetAll()">我知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API 設定視窗 -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal">
+      <div class="modal-title">系統連動設定</div>
+      <p style="font-size: 13px; color: #666; margin-bottom: 12px;">請貼入 Google Apps Script 部署後的「網頁應用程式網址」：</p>
+      <input type="text" id="apiEndpointInput" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
+      <div class="modal-actions">
+        <button class="btn-close" onclick="closeModal('configModal')">取消</button>
+        <button class="btn-submit" onclick="saveConfig()">儲存網址</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MENU_ITEMS = [
+      { id: 't1', name: '傳統手工豆花', price: 50, desc: '傳承古法製作，綿密豆香' },
+      { id: 't2', name: '紅豆豆花', price: 55, desc: '慢火熬煮萬丹紅豆，甜而不膩' },
+      { id: 't3', name: '綠豆豆花', price: 55, desc: '顆粒分明，清涼退火' },
+      { id: 't4', name: '湯圓豆花', price: 55, desc: '現煮紅白小湯圓，軟Q滑順' },
+      { id: 't5', name: '煉乳豆花', price: 55, desc: '濃郁奶香與古早糖水交織' },
+      { id: 't6', name: '綜合豆花', price: 60, desc: '一次滿足（紅豆、綠豆、湯圓）' }
+    ];
+
+    const ADDONS = [
+      { id: 'redbean', name: '加紅豆', price: 5 },
+      { id: 'greenbean', name: '加綠豆', price: 5 },
+      { id: 'tangyuan', name: '加湯圓', price: 5 },
+      { id: 'milk', name: '加煉乳', price: 5 }
+    ];
+
+    let cart = [];
+    let selectedAddonsState = {};
+
+    function renderMenu() {
+      const container = document.getElementById('menuList');
+      container.innerHTML = MENU_ITEMS.map(item => {
+        const itemAddons = selectedAddonsState[item.id] || [];
+        const addonsPrice = itemAddons.length * 5;
+        const currentItemTotal = item.price + addonsPrice;
+
+        return `
+          <div class="menu-card">
+            <div class="card-top">
+              <span class="item-name">${item.name}</span>
+              <span class="item-price">$${currentItemTotal}</span>
+            </div>
+            <div class="item-desc">${item.desc}</div>
+            
+            <div class="addon-section">
+              <div class="addon-title">選擇加料（每樣 +$5）</div>
+              <div class="addon-chips">
+                ${ADDONS.map(addon => {
+                  const isChecked = itemAddons.includes(addon.name);
+                  return `
+                    <div class="addon-chip ${isChecked ? 'selected' : ''}" 
+                         onclick="toggleAddon('${item.id}', '${addon.name}')">
+                      ${isChecked ? '✓ ' : '+ '}${addon.name} (+$5)
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="card-bottom">
+              <button class="btn-add" onclick="addToCart('${item.id}')">加入外帶清單</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleAddon(itemId, addonName) {
+      if (!selectedAddonsState[itemId]) selectedAddonsState[itemId] = [];
+      const idx = selectedAddonsState[itemId].indexOf(addonName);
+      if (idx > -1) {
+        selectedAddonsState[itemId].splice(idx, 1);
+      } else {
+        selectedAddonsState[itemId].push(addonName);
+      }
+      renderMenu();
+    }
+
+    function addToCart(itemId) {
+      const item = MENU_ITEMS.find(i => i.id === itemId);
+      const chosenAddons = [...(selectedAddonsState[itemId] || [])];
+      const singlePrice = item.price + (chosenAddons.length * 5);
+
+      cart.push({
+        name: item.name,
+        basePrice: item.price,
+        addons: chosenAddons,
+        finalPrice: singlePrice
+      });
+
+      selectedAddonsState[itemId] = [];
+      renderMenu();
+      updateCartBar();
+    }
+
+    function updateCartBar() {
+      const bar = document.getElementById('cartBar');
+      if (cart.length === 0) {
+        bar.style.display = 'none';
+        return;
+      }
+      bar.style.display = 'flex';
+      document.getElementById('cartCount').textContent = cart.length;
+      const total = cart.reduce((sum, item) => sum + item.finalPrice, 0);
+      document.getElementById('cartTotal').textContent = '$' + total;
+    }
+
+    function openCheckoutModal() {
+      const listEl = document.getElementById('checkoutItems');
+      const total = cart.reduce((sum, item) => sum + item.finalPrice, 0);
+      
+      listEl.innerHTML = cart.map((item, idx) => `
+        <div class="modal-item-row">
+          <div>
+            <strong>${idx + 1}. ${item.name}</strong>
+            ${item.addons.length > 0 ? `<div style="font-size: 12px; color: var(--vintage-blue);">${item.addons.join('、')}</div>` : ''}
+          </div>
+          <div style="font-weight: bold; color: var(--vintage-red);">$${item.finalPrice}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('modalTotal').textContent = '$' + total;
+      document.getElementById('checkoutModal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function generateOrderCode() {
+      const letters = ['A', 'B', 'C', 'D'];
+      const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+      const randomNum = String(Math.floor(Math.random() * 90) + 10);
+      return `#${randomLetter}${randomNum}`;
+    }
+
+    async function submitOrder() {
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送單中...';
+
+      const pickupCode = generateOrderCode();
+      const notes = document.getElementById('orderNotes').value.trim();
+      const total = cart.reduce((sum, item) => sum + item.finalPrice, 0);
+
+      const itemsDetail = cart.map(item => {
+        if (item.addons.length > 0) {
+          return `${item.name}（${item.addons.join(', ')}）`;
+        }
+        return item.name;
+      }).join('、');
+
+      const payload = {
+        orderNumber: pickupCode,
+        orderType: "外帶",
+        itemsSummary: itemsDetail,
+        totalPrice: total,
+        notes: notes || "無",
+        paymentStatus: "待付現金",
+        status: "待付款備餐"
+      };
+
+      const endpoint = 'https://script.google.com/macros/s/AKfycbzNNX3OJT-Vj5RpCWVbAkIfpx40Yq5Al388P-BVuivqgeoVc8riFTm8uIF8ZLpIqls5Cw/exec';
+
+      if (endpoint) {
+        try {
+          await fetch(endpoint, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          console.error("發送失敗，使用本地紀錄", e);
+        }
+      }
+
+      closeModal('checkoutModal');
+      document.getElementById('displayPickupNum').textContent = pickupCode;
+      document.getElementById('successModal').style.display = 'flex';
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = '送出訂單';
+    }
+
+    function resetAll() {
+      cart = [];
+      selectedAddonsState = {};
+      document.getElementById('orderNotes').value = '';
+      closeModal('successModal');
+      renderMenu();
+      updateCartBar();
+    }
+
+    function openConfigModal() {
+      document.getElementById('apiEndpointInput').value = localStorage.getItem('douhua_gas_url') || '';
+      document.getElementById('configModal').style.display = 'flex';
+    }
+
+    function saveConfig() {
+      const val = document.getElementById('apiEndpointInput').value.trim();
+      localStorage.setItem('douhua_gas_url', val);
+      alert('API 網址儲存成功！');
+      closeModal('configModal');
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
